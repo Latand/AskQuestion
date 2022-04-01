@@ -6,38 +6,27 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 
 from tgbot.config import Config
-from tgbot.keyboards.reply import ask_question_keyboard, confirm_keyboard, cancel_keyboard
+from tgbot.keyboards.reply import confirm_keyboard, cancel_keyboard
 
 
 async def ask_question(message: types.Message, state: FSMContext, config: Config):
     """
-    Обработчик нажатия на кнопку "Задать вопрос"
+    Обработчик нажатия на кнопку "Отмена"
     """
+
     last_question_asked = (await state.get_data()).get("last_question_asked")
-    if last_question_asked is None:
-        await message.answer("Введите вопрос или нажмите на кнопку отмены", reply_markup=cancel_keyboard())
-        await state.set_state("ask_question")
-    else:
+    if last_question_asked:
         delta_hours = (datetime.datetime.now() - last_question_asked).seconds / 3600
-        if delta_hours < config.misc.MIN_TIME_BETWEEN_QUESTIONS:
+        if delta_hours < 8:
             await message.answer(f"Вы можете задать вопрос только раз в {config.misc.MIN_TIME_BETWEEN_QUESTIONS} часов."
                                  f"\n\n"
                                  f"Осталось {config.misc.MIN_TIME_BETWEEN_QUESTIONS - delta_hours:.0f} часов")
+            if message.from_user.id in config.tg_bot.admin_ids:
+                await message.answer("Вы можете задать вопрос в любое время, если вы администратор",
+                                     reply_markup=types.ReplyKeyboardRemove())
+            else:
+                return
 
-
-async def cancel_question(message: types.Message, state: FSMContext):
-    """
-    Обработчик нажатия на кнопку "Отмена"
-    """
-    await message.answer('Вопрос не был задан, Нажмите на кнопку "Задать вопрос" для задания нового вопроса',
-                         reply_markup=ask_question_keyboard())
-    await state.reset_state(with_data=False)
-
-
-async def confirm_question(message: types.Message, state: FSMContext):
-    """
-    Обработчик нажатия на кнопку "Отмена"
-    """
     await message.reply("Вы действительно хотите задать этот вопрос?", reply_markup=confirm_keyboard())
     await state.update_data({"question": message.text})
     await state.set_state("confirm_question")
@@ -62,15 +51,13 @@ async def process_question(message: types.Message, state: FSMContext, config: Co
         await state.update_data(last_question_asked=datetime.datetime.now())
         return
     elif message.text == "Нет":
-        await message.answer('Вопрос не был задан, Нажмите на кнопку "Задать вопрос" для задания нового вопроса',
-                             reply_markup=ask_question_keyboard())
+        await message.answer('Вопрос не был задан, Введите новый вопрос, чтобы его задать',
+                             reply_markup=types.ReplyKeyboardRemove())
 
 
 def register_question_handlers(dp):
     """
     Регистрация обработчиков нажатия на кнопку "Задать вопрос"
     """
-    dp.register_message_handler(ask_question, text="Задать вопрос")
-    dp.register_message_handler(cancel_question, text="Отмена", state="ask_question")
-    dp.register_message_handler(confirm_question, state="ask_question")
+    dp.register_message_handler(ask_question)
     dp.register_message_handler(process_question, state="confirm_question")

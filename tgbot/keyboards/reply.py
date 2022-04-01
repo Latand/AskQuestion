@@ -1,17 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 
-def ask_question_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text="Задать вопрос")
-            ]
-        ],
-        resize_keyboard=True,
-    )
-
-
 def confirm_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
