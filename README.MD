@@ -4,9 +4,10 @@
 
 1. Установите докер на ОС:
    1. `sudo apt-get install docker docker-compose`
+   2. (Либо установите не от root пользователя и добавьте в его группу `docker`, чтобы запускать без `sudo`)
 2. Скачайте бота:
    1. `git clone https://github.com/Latand/AskQuestion`
    2. Перейдите в папку AskQuestion
 3. Переименуйте файл `.env.dist` в `.env`
 4. Заполните переменные в файле `.env`
-5. В консоли введите `docker-compose up`
+5. В консоли введите `sudo docker-compose up`
